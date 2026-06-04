@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ThoughtLink — thinking in public. Tools and writing on the work of thinking. AI made the input to thinking explode; digestion didn't keep up." />
+    <meta name="keywords" content="thinking in public, thought tools, AI thinking, white-boxing, second brain, knowledge tools, thinking-tree, Git for Thought" />
+    <meta name="author" content="ThoughtLink" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://thoughtlink.ai/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ThoughtLink" />
+    <meta property="og:title" content="ThoughtLink — Thinking in public" />
+    <meta property="og:description" content="Tools and writing on the work of thinking. AI made the input explode; digestion didn't keep up." />
+    <meta property="og:url" content="https://thoughtlink.ai/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://thoughtlink.ai/og-image.png" />
+    <meta property="og:image:secure_url" content="https://thoughtlink.ai/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ThoughtLink — Thinking in public" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ThoughtLink — Thinking in public" />
+    <meta name="twitter:description" content="Tools and writing on the work of thinking. AI made the input explode; digestion didn't keep up." />
+    <meta name="twitter:image" content="https://thoughtlink.ai/og-image.png" />
+    <meta name="twitter:image:alt" content="ThoughtLink — Thinking in public" />
+
+    <title>ThoughtLink — Thinking in public</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./style.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "ThoughtLink",
+        "alternateName": "Thinking in public",
+        "url": "https://thoughtlink.ai/",
+        "description": "Tools and writing on the work of thinking. AI made the input to thinking explode; digestion didn't keep up.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "ThoughtLink",
+          "url": "https://thoughtlink.ai/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="bg" aria-hidden="true"></canvas>
+
+    <main>
+      <section class="hero">
+        <h1>ThoughtLink</h1>
+        <p class="tagline">Thinking in public.</p>
+      </section>
+
+      <section class="manifesto">
+        <p>AI made the input to thinking explode. Digestion didn't keep up.</p>
+        <p>The more we talk to AI, the more we become black boxes — things flow through us and leave almost nothing behind.</p>
+        <p>White-boxing isn't about being transparent to AI. It's about being transparent to yourself.</p>
+        <p>We believe people need a clearer self more than a smarter AI. Each project below is a different attempt at that.</p>
+      </section>
+
+      <section class="projects">
+        <h2>Projects</h2>
+        <ul class="project-list">
+          <li>
+            <a class="project" href="https://github.com/" target="_blank" rel="noopener">
+              <span class="name">thinking-tree</span>
+              <span class="dash">—</span>
+              <span class="desc">A Claude Code plugin that captures fragments mid-conversation and grows them into structured thinking.</span>
+            </a>
+          </li>
+          <li>
+            <a class="project" href="#" data-prevent-default>
+              <span class="name">Git for Thought</span>
+              <span class="dash">—</span>
+              <span class="desc">A web platform for branching, merging, and time-traveling your own thinking history.</span>
+            </a>
+          </li>
+          <li class="placeholder">
+            <span class="dot">·</span>
+            <span>More to come.</span>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <span>© 2026 ThoughtLink</span>
+    </footer>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("bg");
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext("2d");
+
+        const NODE_COUNT = 42;
+        const LINK_DISTANCE = 165;
+        const MOUSE_RADIUS = 200;
+        const NODE_RGB = "200, 200, 215";
+        const LINK_RGB = "160, 165, 195";
+        const CONTENT_DIM = 0.18;
+        const FEATHER = 60;
+
+        let width = 0, height = 0, dpr = 1;
+        const nodes = [];
+        const mouse = { x: -9999, y: -9999 };
+        let contentBand = null;
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function resize() {
+          dpr = window.devicePixelRatio || 1;
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = width + "px";
+          canvas.style.height = height + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function updateContentBand() {
+          const mainEl = document.querySelector("main");
+          if (!mainEl) { contentBand = null; return; }
+          const rect = mainEl.getBoundingClientRect();
+          contentBand = { left: rect.left, right: rect.right };
+        }
+
+        // 1.0 在背景区域、CONTENT_DIM 在 main 内部、中间带 FEATHER 羽化过渡
+        function alphaMul(x) {
+          if (!contentBand) return 1;
+          const l = contentBand.left;
+          const r = contentBand.right;
+          if (x >= l && x <= r) return CONTENT_DIM;
+          if (x < l - FEATHER || x > r + FEATHER) return 1;
+          const dist = x < l ? l - x : x - r;
+          return CONTENT_DIM + (1 - CONTENT_DIM) * (dist / FEATHER);
+        }
+
+        function init() {
+          resize();
+          updateContentBand();
+          nodes.length = 0;
+          for (let i = 0; i < NODE_COUNT; i++) {
+            nodes.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              vx: (Math.random() - 0.5) * 0.25,
+              vy: (Math.random() - 0.5) * 0.25,
+              size: 1 + Math.random() * 1.2,
+              phase: Math.random() * Math.PI * 2,
+              boost: 0,
+            });
+          }
+        }
+
+        function step(t) {
+          ctx.clearRect(0, 0, width, height);
+
+          for (const n of nodes) {
+            if (!reduceMotion) {
+              n.x += n.vx;
+              n.y += n.vy;
+              if (n.x < -20) n.x = width + 20;
+              if (n.x > width + 20) n.x = -20;
+              if (n.y < -20) n.y = height + 20;
+              if (n.y > height + 20) n.y = -20;
+            }
+            const dx = n.x - mouse.x;
+            const dy = n.y - mouse.y;
+            const d2 = dx * dx + dy * dy;
+            n.boost = d2 < MOUSE_RADIUS * MOUSE_RADIUS
+              ? 1 - Math.sqrt(d2) / MOUSE_RADIUS
+              : 0;
+          }
+
+          ctx.lineWidth = 1;
+          for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i];
+            for (let j = i + 1; j < nodes.length; j++) {
+              const b = nodes[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < LINK_DISTANCE * LINK_DISTANCE) {
+                const d = Math.sqrt(d2);
+                const base = (1 - d / LINK_DISTANCE) * 0.18;
+                const boost = Math.max(a.boost, b.boost) * 0.55;
+                const mul = (alphaMul(a.x) + alphaMul(b.x)) * 0.5;
+                const alpha = (base + boost) * mul;
+                if (alpha < 0.005) continue;
+                ctx.strokeStyle = "rgba(" + LINK_RGB + "," + alpha + ")";
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.stroke();
+              }
+            }
+          }
+
+          for (const n of nodes) {
+            const breath = reduceMotion
+              ? 0.45
+              : 0.32 + 0.22 * Math.sin(t * 0.0008 + n.phase);
+            const alpha = Math.min(1, (breath + n.boost * 0.4) * alphaMul(n.x));
+            if (alpha < 0.01) continue;
+            ctx.fillStyle = "rgba(" + NODE_RGB + "," + alpha + ")";
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          requestAnimationFrame(step);
+        }
+
+        window.addEventListener("resize", () => {
+          resize();
+          updateContentBand();
+        });
+        window.addEventListener("scroll", updateContentBand, { passive: true });
+
+        window.addEventListener("mousemove", (e) => {
+          // 鼠标在 main 横向区间内 → 不响应（让主内容区"安静")
+          if (contentBand &&
+              e.clientX >= contentBand.left &&
+              e.clientX <= contentBand.right) {
+            mouse.x = -9999;
+            mouse.y = -9999;
+            return;
+          }
+          mouse.x = e.clientX;
+          mouse.y = e.clientY;
+        });
+
+        window.addEventListener("mouseout", (e) => {
+          if (!e.relatedTarget) {
+            mouse.x = -9999;
+            mouse.y = -9999;
+          }
+        });
+
+        init();
+        requestAnimationFrame(step);
+
+        // 没有真实链接的占位项目：拦截 click，避免跳到页首
+        document.querySelectorAll("a[data-prevent-default]").forEach((el) => {
+          el.addEventListener("click", (e) => e.preventDefault());
+        });
+      })();
+    </script>
+  </body>
+</html>
