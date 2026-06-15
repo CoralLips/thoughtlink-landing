@@ -39,6 +39,7 @@ To regenerate the PNG after editing the SVG:
 
 ```sh
 npx --yes @resvg/resvg-js-cli og-image.svg og-image.png
+npx --yes oxipng -o max --strip safe og-image.png   # lossless, ~62% smaller
 ```
 
 ## Future
